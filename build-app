@@ -1,0 +1,19 @@
+BUILD_PLATFORM=$1
+BUILD_ENV=$2
+CHANGELOG=$(gitchangelog `git tag --sort=-committerdate | head -1`...`git tag --sort=-committerdate | head -2 | awk '{split($0, tags, "\n")} END {print tags[1]}'`)
+PLATFORM_PATH=$(pwd)/$BUILD_PLATFORM
+if [ "$BUILD_ENV" == "production" ]
+then
+  cp lib/.env.production.dart lib/.env.dart
+  gitchangelog > CHANGELOG.md
+  git commit -am "update changelog"
+  git push origin dev --tags
+  ruby release.rb
+  echo "Fix bug and add some improvements" > $PLATFORM_PATH/fastlane/metadata/android/en-US/changelogs/default.txt
+  cd $BUILD_PLATFORM && fastlane $BUILD_PLATFORM deploy
+else
+  cp lib/.env.dev.dart lib/.env.dart && flutter build $BUILD_PLATFORM --no-codesign
+fi
+
+# cp lib/.env.dev.dart lib/.env.dart
+
